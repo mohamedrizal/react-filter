@@ -44,7 +44,7 @@ const getPersistedFilters = () => {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs): Promise<LoaderData> => {
-  const res = await fetch("/data/indonesia_regions.json");
+  const res = await fetch(`${import.meta.env.BASE_URL}data/indonesia_regions.json`);
   const data: { provinces: Province[]; regencies: Regency[]; districts: District[] } = await res.json();
   const { provinces, regencies, districts } = data;
 
