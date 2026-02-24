@@ -5,7 +5,34 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+import type { ChangeEvent } from "react";
+import type { LoaderFunctionArgs } from "react-router-dom";
 
+type Province = {
+  id: number;
+  name: string;
+};
+
+type Regency = {
+  id: number;
+  province_id: number;
+  name: string;
+};
+
+type District = {
+  id: number;
+  regency_id: number;
+  name: string;
+};
+
+type LoaderData = {
+  provinces: Province[];
+  filteredRegencies: Regency[];
+  filteredDistricts: District[];
+  selectedProvince: Province | null;
+  selectedRegency: Regency | null;
+  selectedDistrict: District | null;
+};
 
 const getPersistedFilters = () => {
   try {
@@ -16,9 +43,10 @@ const getPersistedFilters = () => {
   }
 };
 
-export const loader = async ({ request }) => {
+export const loader = async ({ request }: LoaderFunctionArgs): Promise<LoaderData> => {
   const res = await fetch("/data/indonesia_regions.json");
-  const { provinces, regencies, districts } = await res.json();
+  const data: { provinces: Province[]; regencies: Regency[]; districts: District[] } = await res.json();
+  const { provinces, regencies, districts } = data;
 
   const url = new URL(request.url);
   const persistedFilters = getPersistedFilters();
@@ -48,9 +76,9 @@ export const loader = async ({ request }) => {
     provinces,
     filteredRegencies,
     filteredDistricts,
-    selectedProvince,
-    selectedRegency,
-    selectedDistrict,
+    selectedProvince: selectedProvince || null,
+    selectedRegency: selectedRegency || null,
+    selectedDistrict: selectedDistrict || null,
   };
 };
 
@@ -62,12 +90,12 @@ function App() {
     selectedProvince,
     selectedRegency,
     selectedDistrict,
-  } = useLoaderData();
+  } = useLoaderData() as LoaderData;
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const handleFilterChange = (e) => {
+  const handleFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     const newParams = new URLSearchParams(searchParams);
 
@@ -180,7 +208,6 @@ function App() {
             </div>
           </form>
         </div>
-
       </aside>
 
       <div className="w-4/5 p-8 flex flex-col">
@@ -251,13 +278,18 @@ function App() {
   );
 }
 
-export const router = createBrowserRouter([
+export const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <App />,
+      loader: loader,
+    },
+  ],
   {
-    path: "/",
-    element: <App />,
-    loader: loader,
-  },
-]);
+    basename: "/react-filter" 
+  }
+);
 
 export default function Root() {
   return <RouterProvider router={router} />;
